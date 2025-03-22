@@ -2,6 +2,7 @@ import requests
 import time
 from datetime import datetime, timedelta
 import multiprocessing
+import random
 
 CENTRAL_API = "https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net/"
 
@@ -16,23 +17,30 @@ def simulate_parking(spot, stop_event):
         for reservation in reservations:
             if reservation['spot_id'] == spot['_id']:
                 current_time = datetime.now()
-                start_time = reservation['start_time']
-                end_time = reservation['end_time']
-                if str(current_time + timedelta(seconds=10)) >= start_time:
-                    requests.put(CENTRAL_API + f"spots/{spot['_id']}", json={"status": "vacant"}, headers=headers)
-                    time.sleep(1)
-                while start_time <= str(datetime.now()) < end_time:
+                start_time = datetime.fromisoformat(reservation['start_time'])
+                end_time = datetime.fromisoformat(reservation['end_time'])
+                if (current_time + timedelta(seconds=50)) >= start_time:
                     requests.put(CENTRAL_API + f"spots/{spot['_id']}", json={"status": "reserved"}, headers=headers)
-                    time.sleep(30)
-
+                if start_time <= datetime.now() <= end_time:
+                    requests.put(CENTRAL_API + f"spots/{spot['_id']}", json={"status": "occupied"}, headers=headers)
+                    while start_time <= datetime.now() <= end_time:
+                        time.sleep(60)
+                    requests.put(CENTRAL_API + f"spots/{spot['_id']}", json={"status": "vacant"}, headers=headers)
+                    requests.delete(CENTRAL_API + f"reservations/{reservation['_id']}")
+        sleep_time = random.randint(10, 40)
+        time.sleep(sleep_time)
         if spot['status'] == 'vacant':
-            status_changed_response = requests.put(CENTRAL_API + f"spots/{spot['_id']}", json={"status": "occupied"}, headers=headers)
-            print(status_changed_response.json())
-            time.sleep(30)
+            spot_status_changed_response = requests.put(CENTRAL_API + f"spots/{spot['_id']}", json={"status": "occupied"}, headers=headers)
+            spot = spot_status_changed_response.json()
+            print(spot)
+        sleep_time = random.randint(5, 20)
+        time.sleep(sleep_time)
         if spot['status'] == 'occupied':
-            status_changed_response = requests.put(CENTRAL_API + f"spots/{spot['_id']}", json={"status": "vacant"}, headers=headers)
-            print(status_changed_response.json())
-        time.sleep(30)
+            spot_status_changed_response = requests.put(CENTRAL_API + f"spots/{spot['_id']}", json={"status": "vacant"}, headers=headers)
+            spot = spot_status_changed_response.json()
+            print(spot)
+        sleep_time = random.randint(5, 20)
+        time.sleep(sleep_time)
 
 
 if __name__ == '__main__':
