@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 import httpx
 import json
+import os
 
 app = FastAPI()
 
@@ -12,7 +13,7 @@ BASE_PRICES = {
     "evening": 8  # 6 PM - 12 AM
 }
 
-MAIN_APP_URL = "https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net"  
+MAIN_APP_URL = os.getenv('MAIN_APP_URL')
 
 class PriceRequest(BaseModel):
     timestamp: datetime = Field(..., example="2025-03-08T16:30:00")
@@ -45,7 +46,7 @@ async def fetch_spot_data():
             raise HTTPException(status_code=500, detail=f"Failed to fetch spot data: {str(e)}")
 
 @app.post("/calculate-price")
-async def calculate_price(request: PriceRequest):
+async def calculate_price(request: PriceRequest) -> float:
     base_price = get_base_price(request.timestamp)
 
     total_spots, occupied_spots = await fetch_spot_data()
