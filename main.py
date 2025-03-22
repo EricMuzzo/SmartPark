@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from datetime import datetime
 import httpx
+import json
 
 app = FastAPI()
 
@@ -32,11 +33,12 @@ async def fetch_spot_data():
         try:
             # Fetch total spots
             total_response = await client.get(f"{MAIN_APP_URL}/spots")
-            total_spots = total_response.json()["total_spots"]
-
+            total_spots_json = json.loads(total_response.content)
+            total_spots = total_spots_json['count']
             # Fetch occupied spots
             occupied_response = await client.get(f"{MAIN_APP_URL}/spots?filter=status%3Aeq%3Aoccupied")
-            occupied_spots = occupied_response.json()["occupied_spots"]
+            occupied_spots_json = json.loads(occupied_response.content)
+            occupied_spots = occupied_spots_json['count']
 
             return total_spots, occupied_spots
         except Exception as e:
