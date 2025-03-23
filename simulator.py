@@ -1,3 +1,4 @@
+import pika.exceptions
 import requests
 import time
 from datetime import datetime, timedelta
@@ -27,23 +28,69 @@ class Spot():
         self.queue_name = f"Reservation_{self.id}"
         self.routing_key = f"spot_{self.id}"
         
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters(RABBIT_SERVER, RABBIT_PORT))
-        self.channel = self.connection.channel()
-        self.channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="direct", durable=True)
+        consumer_thread = threading.Thread(target=self.subscribeToResQueue, daemon=True)
+        consumer_thread.start()
         
-        self.res_queue = self.channel.queue_declare(queue=self.queue_name, durable=True)
-        self.channel.queue_bind(exchange=EXCHANGE_NAME, queue=self.queue_name, routing_key=self.routing_key)
-        
-        self.channel.basic_consume(queue=self.queue_name, on_message_callback=self.process_reservation, auto_ack=True)
     
+    def subscribeToResQueue(self):
+        
+        connection = pika.BlockingConnection(pika.ConnectionParameters(RABBIT_SERVER, RABBIT_PORT))
+        channel = connection.channel()
+        channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="direct", durable=True)
+        channel.queue_declare(queue=self.queue_name, durable=True)
+        channel.queue_bind(exchange=EXCHANGE_NAME, queue=self.queue_name, routing_key=self.routing_key)
+        
+        channel.basic_consume(queue=self.queue_name, on_message_callback=self.process_reservation, auto_ack=True)
+
+        try:
+            print("Ready to consume messages")
+            channel.start_consuming()
+            
+        except pika.exceptions.StreamLostError as sle:
+            print(f"StreamLostError encountered in consumer thread: {sle}")
+        except Exception as e:
+            print(f"Unexpected error in consumer thread: {e}")
+        finally:
+            print("Stopping consumption")
+            if channel.is_open:
+                try:
+                    channel.stop_consuming()
+                except Exception as stop_e:
+                    print(f"Error stopping consumer: {stop_e}")
+            if channel.is_open:
+                channel.close()
+            if connection.is_open:
+                connection.close()
+        
+        
+    def process_reservation(self, channel, method, properties, body: bytes):
+        """Handle message from server that a reservation was created"""
+        
+        print(f"Sim {self.id}: Got message:")
+        message = json.loads(body.decode())
+        print(message)
+        
+        #1. update internal status
+        reservation = {
+            "start_time": datetime.fromisoformat(message["start_time"]),
+            "end_time": datetime.fromisoformat(message["end_time"])    
+        }
+        # print(f"Inserting reservation: {reservation}")
+        
+        #2. insert reservation to self.reservations
+        self.reservations.append(reservation)
+        
+        #3. sort the dict
+        self.reservations.sort(key=lambda x: x["start_time"])
+        
+        if self.pause_simulation.is_set():
+            print("pause got set after procesing res")
+            
     
     def start(self, stop_event):
         
         self.pause_simulation = threading.Event()
         
-        consumer_thread = threading.Thread(target=self.channel.start_consuming)
-        consumer_thread.daemon = True
-        consumer_thread.start()
         
         simulation_thread = threading.Thread(target=self.simulation_loop)
         simulation_thread.daemon = True
@@ -61,6 +108,7 @@ class Spot():
                 print(datetime.now())
                 print(self.reservations[0]["start_time"])
                 print(datetime.now() >= self.reservations[0]["start_time"])
+                self.status = 'reserved'
                 self.update_API_status("reserved")
                 time.sleep(49)
                 
@@ -75,15 +123,14 @@ class Spot():
                 while datetime.now() < current_res["end_time"]:
                     time.sleep(1)
                 # Once finished, remove the reservation and resume simulation
+                self.status = 'vacant'
                 self.update_API_status("vacant")
                 self.reservations.pop(0)
                 self.pause_simulation.clear()
+                print("just unset")
             else:
                 time.sleep(1)  # Check periodically
-                
-        self.channel.stop_consuming()
-        self.channel.close()
-        self.connection.close()
+
                 
                 
     def simulation_loop(self):
@@ -91,37 +138,12 @@ class Spot():
         while True:
             # Check if we should pause the simulation due to an active reservation
             if self.pause_simulation.is_set():
-                print("Pause got set")
                 time.sleep(1)  # Simply wait while paused
                 continue
 
             # Run one cycle of the parking simulation
             self.simulate_parking()
         
-    
-    def process_reservation(self, channel, method, properties, body: bytes):
-        """Handle message from server that a reservation was created"""
-        
-        print(f"Sim {self.id}: Got message:")
-        message = json.loads(body.decode())
-        print(message)
-        
-        #1. update internal status
-        self.status = "reserved"
-        reservation = {
-            "start_time": datetime.fromisoformat(message["start_time"]),
-            "end_time": datetime.fromisoformat(message["end_time"])    
-        }
-        # print(f"Inserting reservation: {reservation}")
-        
-        #2. insert reservation to self.reservations
-        self.reservations.append(reservation)
-        
-        #3. sort the dict
-        self.reservations.sort(key=lambda x: x["start_time"])
-        
-        if self.pause_simulation.is_set():
-            print("pause got set after procesing res")
         
         
     def simulate_parking(self):
