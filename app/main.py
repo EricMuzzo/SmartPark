@@ -1,7 +1,10 @@
+# import dotenv
+# dotenv.load_dotenv()
+
 from fastapi import FastAPI
-from .routers import users, authentication, reservations, spots
 from .utils.db import create_indexes, close_mongo_connection
-from .utils.rabbit_connector import teardown_rabbit
+from .utils.rabbit_connector import init_rabbit, teardown_rabbit
+from .routers import users, authentication, reservations, spots
 
 #============================================================
 #   Metadata/Constants
@@ -19,12 +22,13 @@ A centralized RESTful API for the Smart Parking System application
 app = FastAPI(
     title="Central API",
     description=description,
-    version="1.1.2"
+    version="1.1.3"
 )
 
 @app.on_event("startup")
 async def startup_db_client():
     await create_indexes()
+    init_rabbit()
     
 @app.on_event("shutdown")
 async def shutdown_db_client():

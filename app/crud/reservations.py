@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from ..utils.db import reservations_collection, users_collection, spots_collection
 from ..utils.pricing_connector import fetch_pricing
 from ..models.reservation import Reservation
-from ..utils.rabbit_connector import channel, EXCHANGE
+from ..utils.rabbit_connector import publish_message
 
 
 #=============================================================
@@ -41,7 +41,6 @@ async def find_conflict(reservation_data: dict) -> dict | None:
 async def fetch_all_reservations(filters: dict = {}) -> list:
     """Returns a list of dict reservation objects from the reservations collection in database
     """
-
     reservations = await reservations_collection.find(filters).to_list(1000)
     return reservations
 
@@ -115,12 +114,13 @@ async def create_reservation(reservation_data: dict) -> dict:
         "end_time": payload["end_time"]
     }
     send = json.dumps(sim_payload, default=lambda obj: obj.isoformat() if isinstance(obj, datetime) else None)
-    channel.basic_publish(
-        exchange=EXCHANGE,
-        routing_key=routing_key,
-        body=send,
-        properties=BasicProperties(delivery_mode=2)
-    )
+    # get_channel().basic_publish(
+    #     exchange=EXCHANGE,
+    #     routing_key=routing_key,
+    #     body=send,
+    #     properties=BasicProperties(delivery_mode=2)
+    # )
+    publish_message(routing_key, send)
     
     new_reservation = await reservations_collection.insert_one(payload)
     created_reservation = await reservations_collection.find_one({"_id": new_reservation.inserted_id})
