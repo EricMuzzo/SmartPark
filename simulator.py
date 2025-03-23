@@ -8,8 +8,9 @@ import json
 import threading
 
 
-CENTRAL_API = "https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net/"
-RABBIT_SERVER, RABBIT_PORT = "20.175.174.220", 5672
+# CENTRAL_API = "https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net/"
+CENTRAL_API = "http://localhost:8000/"
+RABBIT_SERVER, RABBIT_PORT = "4.248.248.109", 5672
 EXCHANGE_NAME = "res_exchange"
 
 
@@ -26,7 +27,7 @@ class Spot():
         self.queue_name = f"Reservation_{self.id}"
         self.routing_key = f"spot_{self.id}"
         
-        self.connection = pika.BlockingConnection(pika.ConnectionParameters(RABBIT_SERVER, RABBIT_PORT, credentials= pika.PlainCredentials('eric', 'dirtbIke1*')))
+        self.connection = pika.BlockingConnection(pika.ConnectionParameters(RABBIT_SERVER, RABBIT_PORT))
         self.channel = self.connection.channel()
         self.channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="direct", durable=True)
         
@@ -50,14 +51,27 @@ class Spot():
         
         while not stop_event.is_set():
             
-            if self.reservations and (datetime.now() + timedelta(seconds=50)) >= self.reservations[0]["start_time"]:
-                self.update_API_status("vacant")
+            # print(f"In main while, reservations: {self.reservations}")
+            
+            if len(self.reservations) > 0 and (datetime.now() + timedelta(seconds=50)) >= self.reservations[0]["start_time"]:
+                if self.pause_simulation.is_set():
+                    print("inside if 1, pause is set")
+                else:
+                    print("inside if 1, pause is unset")
+                print(datetime.now())
+                print(self.reservations[0]["start_time"])
+                print(datetime.now() >= self.reservations[0]["start_time"])
+                self.update_API_status("reserved")
+                time.sleep(49)
                 
-            if self.reservations and datetime.now() >= self.reservations[0]["start_time"]:
+                
+            if len(self.reservations) > 0 and datetime.now() >= self.reservations[0]["start_time"]:
                 self.pause_simulation.set()
+                print("just set")
                 self.update_API_status("occupied")
                 # Wait until the current reservation ends
                 current_res = self.reservations[0]
+                # print(current_res)
                 while datetime.now() < current_res["end_time"]:
                     time.sleep(1)
                 # Once finished, remove the reservation and resume simulation
@@ -67,12 +81,17 @@ class Spot():
             else:
                 time.sleep(1)  # Check periodically
                 
+        self.channel.stop_consuming()
+        self.channel.close()
+        self.connection.close()
+                
                 
     def simulation_loop(self):
         """Continuously simulate parking if not paused."""
         while True:
             # Check if we should pause the simulation due to an active reservation
             if self.pause_simulation.is_set():
+                print("Pause got set")
                 time.sleep(1)  # Simply wait while paused
                 continue
 
@@ -80,23 +99,29 @@ class Spot():
             self.simulate_parking()
         
     
-    def process_reservation(self, body: bytes):
+    def process_reservation(self, channel, method, properties, body: bytes):
         """Handle message from server that a reservation was created"""
         
+        print(f"Sim {self.id}: Got message:")
         message = json.loads(body.decode())
+        print(message)
         
         #1. update internal status
         self.status = "reserved"
         reservation = {
             "start_time": datetime.fromisoformat(message["start_time"]),
-            "start_time": datetime.fromisoformat(message["end_time"])    
+            "end_time": datetime.fromisoformat(message["end_time"])    
         }
+        # print(f"Inserting reservation: {reservation}")
         
         #2. insert reservation to self.reservations
         self.reservations.append(reservation)
         
         #3. sort the dict
         self.reservations.sort(key=lambda x: x["start_time"])
+        
+        if self.pause_simulation.is_set():
+            print("pause got set after procesing res")
         
         
     def simulate_parking(self):
@@ -140,7 +165,7 @@ def run_spot(spot_data, stop_event):
     new_spot.start(stop_event)
 
 if __name__ == '__main__':
-    spots_response = requests.get(CENTRAL_API + "spots")
+    spots_response = requests.get(CENTRAL_API + "spots?filter=spot_number%3Aeq%3A1&filter=floor_level%3Aeq%3A0")
     spots = spots_response.json()['records']
     stop_event = multiprocessing.Event()
     processes = []
