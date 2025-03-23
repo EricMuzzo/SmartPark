@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Response
-from ..models.spot import ParkingSpot, ParkingSpotBase, ParkingSpotCollection, ParkingSpotUpdate
+from ..models.spot import ParkingSpot, ParkingSpotBase, ParkingSpotUpdate
 from ..models.generic import ListResponse
 from ..crud import spots as spots_crud
 from ..utils.filtering import parse_spots_filter

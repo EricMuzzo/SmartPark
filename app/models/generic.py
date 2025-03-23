@@ -9,3 +9,11 @@ class ListResponse(BaseModel, Generic[T]):
     @property
     def count(self) -> int:
         return len(self.records)
+    
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    
+class TokenData(BaseModel):
+    username: str | None = None

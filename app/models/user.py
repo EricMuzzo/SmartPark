@@ -4,6 +4,8 @@ from pydantic.types import PaymentCardNumber
 from typing import Optional, Annotated, List
 from bson import ObjectId
 
+from .generic import Token
+
 PyObjectId = Annotated[str, BeforeValidator(str)]
 
 class PaymentMethod(BaseModel):
@@ -17,7 +19,7 @@ class UserBase(BaseModel):
     username: str = Field(...)
     name: str = Field(...)
     email: EmailStr = Field(...)
-    payment_methods: list[PaymentMethod] = Field(default=[], examples=[{"card_number": "123456789999", "expiry_month": 3, "expiry_year": 2027, "cvv": "123"}])
+    # payment_methods: list[PaymentMethod] = Field(default=[], examples=[{"card_number": "123456789999", "expiry_month": 3, "expiry_year": 2027, "cvv": "123"}])
 
 
     
@@ -43,13 +45,6 @@ class UserUpdate(BaseModel):
 class UserCollection(BaseModel):
     users: List[User]
     
-#Maybe move next 2 to separate file later on
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    
-class TokenData(BaseModel):
-    username: str | None = None
     
 class UserSignUp(User):
     token: Token

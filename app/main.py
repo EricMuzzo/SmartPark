@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from .routers import users, authentication, reservations, spots
 from .utils.db import create_indexes, close_mongo_connection
+from .utils.rabbit_connector import teardown_rabbit
 
 #============================================================
 #   Metadata/Constants
@@ -18,7 +19,7 @@ A centralized RESTful API for the Smart Parking System application
 app = FastAPI(
     title="Central API",
     description=description,
-    version="1.0.3"
+    version="1.1.2"
 )
 
 @app.on_event("startup")
@@ -28,6 +29,7 @@ async def startup_db_client():
 @app.on_event("shutdown")
 async def shutdown_db_client():
     await close_mongo_connection()
+    teardown_rabbit()
 
 #============================================================
 #   Register the routes

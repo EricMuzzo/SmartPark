@@ -4,8 +4,9 @@ from bson import ObjectId
 from pymongo.errors import DuplicateKeyError
 from pymongo import ReturnDocument
 
-from ..utils.auth import get_password_hash
+from ..utils.auth import get_password_hash, create_access_token
 from ..utils.db import users_collection
+from ..models.user import Token
 
 async def fetch_all_users(filters: dict = {}) -> list:
     """Returns a list of dict user objects from the users collection in database
@@ -34,8 +35,10 @@ async def create_user(user_data: dict) -> dict:
         create a user with a username or email that another user already has.
 
     Returns:
-        dict: The created user object
+        dict: The created user sign up object
     """
+    #Get an access token
+    token = create_access_token(username=user_data["username"])
     try:
         user_data["password"] = get_password_hash(user_data["password"])
         new_user = await users_collection.insert_one(user_data)
@@ -43,6 +46,10 @@ async def create_user(user_data: dict) -> dict:
         raise HTTPException(status_code=400, detail=f"A user with the provided username or email already exists")
     
     created_user = await users_collection.find_one({"_id": new_user.inserted_id})
+    if created_user is None:
+        raise HTTPException(status_code=500, detail="User creation failed")
+    
+    created_user["token"] = Token(access_token=token, token_type="bearer")
     return created_user
 
 

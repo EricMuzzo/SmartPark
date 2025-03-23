@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, status, Response
-from ..models.reservation import ReservationBase, Reservation, ReservationCollection
+from datetime import timedelta
+
+from ..models.reservation import ReservationBase, Reservation, ReservationCreate
 from ..models.generic import ListResponse
 from ..crud import reservations as reservations_crud
 from ..utils.filtering import parse_reservations_filter
@@ -53,11 +55,13 @@ async def getReservation(id: str) -> Reservation:
 @router.post(
     path="",
     summary="Create reservation",
-    description="Create a reservation record in the database",
+    description="Create a reservation record in the database. The start and end times must be in the future and the minimum booking time is 30 minutes",
     response_model=Reservation,
     responses={404: {"detail": "Conflict with existing reservation"}}
 )
-async def createReservation(reservation: ReservationBase) -> Reservation:
+async def createReservation(reservation: ReservationCreate) -> Reservation:
+    if reservation.end_time < (reservation.start_time + timedelta(minutes=30)):
+        raise HTTPException(status_code=400, detail="Minimum booking time is 30 minutes")
     created_reservation = await reservations_crud.create_reservation(reservation.model_dump(by_alias=True, exclude=["id"]))
     return created_reservation
 

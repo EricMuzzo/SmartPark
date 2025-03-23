@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response
-from ..models.user import User, UserCreate, UserUpdate, UserFilterParams, UserCollection
+from ..models.user import User, UserCreate, UserUpdate, UserFilterParams
 from ..models.generic import ListResponse
 from ..crud import users as user_crud
 
@@ -42,10 +42,10 @@ async def getUser(id: str):
     raise HTTPException(status_code=404, detail=f"User with id {id} not found")
 
 
-@router.post("", summary="Create user", description="Manually create a user", response_model=User, status_code=status.HTTP_201_CREATED)
-async def createUser(user: UserCreate) -> User:
-    new_user = await user_crud.create_user(user.model_dump(by_alias=True, exclude=["id"]))
-    return new_user
+# @router.post("", summary="Create user", description="Manually create a user", response_model=User, status_code=status.HTTP_201_CREATED)
+# async def createUser(user: UserCreate) -> User:
+#     new_user = await user_crud.create_user(user.model_dump(by_alias=True, exclude=["id"]))
+#     return new_user
 
 
 @router.put("/{id}", summary="Update user", description="Update a user by ID", response_model=User, responses=user_not_found_response)

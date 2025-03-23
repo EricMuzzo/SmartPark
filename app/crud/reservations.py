@@ -1,9 +1,13 @@
 from fastapi import HTTPException
 from bson import ObjectId
+import json
+from pika import BasicProperties
+from datetime import datetime, timedelta
 
-from ..utils.db import reservations_collection
+from ..utils.db import reservations_collection, users_collection, spots_collection
 from ..utils.pricing_connector import fetch_pricing
 from ..models.reservation import Reservation
+from ..utils.rabbit_connector import channel, EXCHANGE
 
 
 #=============================================================
@@ -65,6 +69,21 @@ async def create_reservation(reservation_data: dict) -> dict:
         dict: The created user object
     """
     
+    #validate user exists
+    found_user = await users_collection.find_one({"_id": ObjectId(reservation_data["user_id"])})
+    if found_user is None:
+        raise HTTPException(status_code=400, detail=f"User with id {reservation_data["user_id"]} does not exist")
+    
+    #Validate spot exists
+    found_spot = await spots_collection.find_one({"_id": ObjectId(reservation_data["spot_id"])}) 
+    if found_spot is None:
+        raise HTTPException(status_code=400, detail=f"Spot with id {reservation_data["spot_id"]} does not exist")
+    
+    #Validate that start time is not within 5 seconds from now and the spot is still occupied
+    start_time = reservation_data["start_time"]
+    if start_time < (datetime.now() + timedelta(seconds=50)) and (found_spot["status"] == "occupied" or found_spot["status"] == "reserved"):
+        raise HTTPException(status_code=400, detail=f"Cannot make a reservation within the next 50 seconds because spot {reservation_data["spot_id"]} is still occupied or has been reserved")
+    
     #First check if a reservation conflict exists
     conflict = await find_conflict(reservation_data)
     if conflict is not None:
@@ -89,6 +108,19 @@ async def create_reservation(reservation_data: dict) -> dict:
     #Now change back the id strings to ObjectId fields
     payload["user_id"] = ObjectId(payload["user_id"])
     payload["spot_id"] = ObjectId(payload["spot_id"])
+    
+    routing_key = f"spot_{payload["spot_id"]}"
+    sim_payload = {
+        "start_time": payload["start_time"],
+        "end_time": payload["end_time"]
+    }
+    send = json.dumps(sim_payload, default=lambda obj: obj.isoformat() if isinstance(obj, datetime) else None)
+    channel.basic_publish(
+        exchange=EXCHANGE,
+        routing_key=routing_key,
+        body=send,
+        properties=BasicProperties(delivery_mode=2)
+    )
     
     new_reservation = await reservations_collection.insert_one(payload)
     created_reservation = await reservations_collection.find_one({"_id": new_reservation.inserted_id})
