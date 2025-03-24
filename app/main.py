@@ -58,3 +58,7 @@ async def calculate_price(request: PriceRequest):
     final_price = (1 + occupancy_rate) * base_price
 
     return {"final_price": round(final_price, 2)}
+
+@app.get("/")
+async def root():
+    return {"message": "Pricing Service"}
