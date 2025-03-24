@@ -13,7 +13,7 @@ BASE_PRICES = {
     "evening": 8  # 6 PM - 12 AM
 }
 
-MAIN_APP_URL = os.getenv('MAIN_APP_URL')
+MAIN_APP_URL = os.getenv('MAIN_APP_URL') 
 
 class PriceRequest(BaseModel):
     timestamp: datetime = Field(..., example="2025-03-08T16:30:00")
@@ -46,7 +46,7 @@ async def fetch_spot_data():
             raise HTTPException(status_code=500, detail=f"Failed to fetch spot data: {str(e)}")
 
 @app.post("/calculate-price")
-async def calculate_price(request: PriceRequest) -> float:
+async def calculate_price(request: PriceRequest):
     base_price = get_base_price(request.timestamp)
 
     total_spots, occupied_spots = await fetch_spot_data()
@@ -57,4 +57,4 @@ async def calculate_price(request: PriceRequest) -> float:
     occupancy_rate = occupied_spots / total_spots
     final_price = (1 + occupancy_rate) * base_price
 
-    return {"final_price": final_price}
+    return {"final_price": round(final_price, 2)}
