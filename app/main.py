@@ -5,12 +5,13 @@ import httpx
 import json
 import os
 
+
 app = FastAPI()
 
 BASE_PRICES = {
-    "morning": 10,  # 12 AM - 12 PM
-    "afternoon": 12,  # 12 PM - 6 PM
-    "evening": 8  # 6 PM - 12 AM
+    "morning": 0.075,  # 12 AM - 12 PM
+    "afternoon": 0.1,  # 12 PM - 6 PM
+    "evening": 0.05  # 6 PM - 12 AM
 }
 
 MAIN_APP_URL = os.getenv('MAIN_APP_URL') 
