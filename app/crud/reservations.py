@@ -5,7 +5,7 @@ from pika import BasicProperties
 from datetime import datetime, timedelta
 
 from ..utils.db import reservations_collection, users_collection, spots_collection
-from ..utils.pricing_connector import fetch_pricing
+from .pricing_connector import fetch_pricing
 from ..models.reservation import Reservation
 from ..utils.rabbit_connector import publish_message
 

@@ -2,6 +2,9 @@
 """
 from datetime import datetime
 import random
+import os
+
+PRICING_URL = os.getenv("PRICING_URL")
     
 async def fetch_pricing(res_start: datetime, res_end: datetime) -> float:
     """A function to fetch the price from the pricing MS for a given reservation time.
