@@ -1,5 +1,5 @@
-# import dotenv
-# dotenv.load_dotenv()
+import dotenv
+dotenv.load_dotenv()
 
 from fastapi import FastAPI
 from .utils.db import create_indexes, close_mongo_connection
@@ -11,7 +11,7 @@ from .routers import users, authentication, reservations, spots
 #============================================================
 
 description = """
-A centralized RESTful API for the Smart Parking System application
+A centralized RESTful API for the Smart Parking System application. Written by Eric Muzzo.
 """
 
 
@@ -22,7 +22,7 @@ A centralized RESTful API for the Smart Parking System application
 app = FastAPI(
     title="Central API",
     description=description,
-    version="1.2.0",
+    version="1.2.1",
     contact={
         "name": "Eric Muzzo",
         "email": "ericm02@me.com"

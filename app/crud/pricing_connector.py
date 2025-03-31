@@ -7,7 +7,7 @@ import httpx
 
 PRICING_URL = os.getenv("PRICING_URL")
     
-def fetch_pricing(res_start: datetime, res_end: datetime) -> float:
+async def fetch_pricing(res_start: datetime, res_end: datetime) -> float:
     """A function to fetch the price from the pricing MS for a given reservation time.
     This function fetches the rate/minute and computes the total price.
 
@@ -22,7 +22,8 @@ def fetch_pricing(res_start: datetime, res_end: datetime) -> float:
         "timestamp": datetime.isoformat(res_start)
     }
     
-    response = httpx.post(f"{PRICING_URL}/calculate-rate", json=payload)
+    async with httpx.AsyncClient() as client:
+        response = await client.post(f"{PRICING_URL}/calculate-rate", follow_redirects=True, json=payload)
     response.raise_for_status()
     
     minute_rate: float = response.json()["minute_rate"]

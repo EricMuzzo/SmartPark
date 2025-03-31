@@ -88,7 +88,7 @@ async def create_reservation(reservation_data: dict) -> dict:
         raise HTTPException(status_code=400, detail="Conflict with existing reservation")
     
     #Fetch pricing from pricing microservice
-    price = fetch_pricing(reservation_data["start_time"], reservation_data["end_time"])
+    price = await fetch_pricing(reservation_data["start_time"], reservation_data["end_time"])
     
     #build a reservation object
     reservation = Reservation(
