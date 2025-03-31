@@ -50,7 +50,7 @@ class SmartParkUI:
         tk.Label(form_frame, text="Parking Number:", font=label_font, bg="#ffffff", fg="#34495e").grid(row=1, column=0, sticky="w", pady=5)
         self.parking_entry = tk.Entry(form_frame, width=30, font=entry_font, relief="flat", bg="#ecf0f1", fg="#2c3e50")
         self.parking_entry.grid(row=1, column=1, pady=5, padx=5)
-        self.parking_entry.insert(0, "A1")
+        self.parking_entry.insert(0, "1")
 
         # Floor Number
         tk.Label(form_frame, text="Floor Number:", font=label_font, bg="#ffffff", fg="#34495e").grid(row=2, column=0, sticky="w", pady=5)
@@ -132,7 +132,7 @@ class SmartParkUI:
         try:
             response = requests.get(f"{API_BASE_URL}spots")
             response.raise_for_status()
-            spots = response.json()
+            spots = response.json()["records"]
             for spot in spots:
                 if (str(spot["spot_number"]) == str(parking_num) and 
                     str(spot["floor_level"]) == str(floor_num) and 
