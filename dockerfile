@@ -1,4 +1,5 @@
 FROM python:3.13.2-slim
+ENV TZ="America/New_York"
 
 WORKDIR /api
 
