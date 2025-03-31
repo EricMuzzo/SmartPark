@@ -25,4 +25,4 @@ ui.page("/signup")(session_signup_page)
 ui.page("/overview")(lambda: overview_page(api_client, current_user_id))
 ui.page("/my_reservations")(lambda: my_reservations_page(api_client, current_user_id))
 
-ui.run(title="Smart Parking System", reload=True)
+ui.run(host="0.0.0.0", port=80, title="Smart Parking System", reload=True)

@@ -10,4 +10,7 @@ RUN pip install --no-cache-dir -r /ui/requirements.txt
 
 COPY ./app /ui/app
 
+EXPOSE 80
+ENV PYTHONUNBUFFERED=True
+
 CMD ["python", "app/main.py"]
