@@ -5,8 +5,13 @@ import httpx
 import json
 import os
 
-
-app = FastAPI()
+app = FastAPI(
+    version="1.1.0",
+    summary="Written By Prevail Awoleye",
+    contact={
+        "name": "Prevail Awoleye"
+    }
+)
 
 BASE_PRICES = {
     "morning": 0.075,  # 12 AM - 12 PM
@@ -14,10 +19,13 @@ BASE_PRICES = {
     "evening": 0.05  # 6 PM - 12 AM
 }
 
-MAIN_APP_URL = os.getenv('MAIN_APP_URL') 
+MAIN_APP_URL = os.getenv('MAIN_APP_URL')
 
 class PriceRequest(BaseModel):
     timestamp: datetime = Field(..., example="2025-03-08T16:30:00")
+    
+class PriceResponse(BaseModel):
+    minute_rate: float = Field(..., example=0.12)
 
 def get_base_price(timestamp: datetime) -> float:
 
@@ -46,7 +54,12 @@ async def fetch_spot_data():
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to fetch spot data: {str(e)}")
 
-@app.post("/calculate-price")
+@app.post(
+    path="/calculate-rate",
+    summary="Returns the pricing rate per minute",
+    response_model=PriceResponse,
+    status_code=200
+)
 async def calculate_price(request: PriceRequest):
     base_price = get_base_price(request.timestamp)
 
@@ -58,7 +71,7 @@ async def calculate_price(request: PriceRequest):
     occupancy_rate = occupied_spots / total_spots
     final_price = (1 + occupancy_rate) * base_price
 
-    return {"final_price": round(final_price, 2)}
+    return PriceResponse(minute_rate=round(final_price, 2))
 
 @app.get("/")
 async def root():
