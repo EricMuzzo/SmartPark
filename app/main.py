@@ -3,16 +3,18 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 import httpx
 import json
+import os
+
 
 app = FastAPI()
 
 BASE_PRICES = {
-    "morning": 10,  # 12 AM - 12 PM
-    "afternoon": 12,  # 12 PM - 6 PM
-    "evening": 8  # 6 PM - 12 AM
+    "morning": 0.075,  # 12 AM - 12 PM
+    "afternoon": 0.1,  # 12 PM - 6 PM
+    "evening": 0.05  # 6 PM - 12 AM
 }
 
-MAIN_APP_URL = "https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net"  
+MAIN_APP_URL = os.getenv('MAIN_APP_URL') 
 
 class PriceRequest(BaseModel):
     timestamp: datetime = Field(..., example="2025-03-08T16:30:00")
@@ -56,4 +58,8 @@ async def calculate_price(request: PriceRequest):
     occupancy_rate = occupied_spots / total_spots
     final_price = (1 + occupancy_rate) * base_price
 
-    return {"final_price": final_price}
+    return {"final_price": round(final_price, 2)}
+
+@app.get("/")
+async def root():
+    return {"message": "Pricing Service"}
