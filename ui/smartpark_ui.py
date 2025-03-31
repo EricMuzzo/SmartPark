@@ -3,8 +3,12 @@ from tkinter import messagebox
 import requests
 import json
 from datetime import datetime, timedelta
+import os
+from dotenv import load_dotenv
 
-API_BASE_URL = "https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net/"
+load_dotenv()
+
+API_BASE_URL = os.getenv("API_BASE_URL")
 
 class SmartParkUI:
     def __init__(self, root):
@@ -75,11 +79,11 @@ class SmartParkUI:
 
         tk.Button(
             button_frame, 
-            text="Submit", 
-            command=self.submit_data, 
+            text="Submit",
+            command=self.submit_data,
             bg="#3498db",  # Blue
-            fg="white", 
-            font=("Helvetica", 11, "bold"), 
+            fg="white",
+            font=("Helvetica", 11, "bold"),
             relief="flat", 
             padx=20, 
             pady=5
