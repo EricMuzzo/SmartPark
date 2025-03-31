@@ -1,7 +1,6 @@
 from fastapi import HTTPException
 from bson import ObjectId
 import json
-from pika import BasicProperties
 from datetime import datetime, timedelta
 
 from ..utils.db import reservations_collection, users_collection, spots_collection
@@ -88,10 +87,8 @@ async def create_reservation(reservation_data: dict) -> dict:
     if conflict is not None:
         raise HTTPException(status_code=400, detail="Conflict with existing reservation")
     
-    #Now we need to fetch pricing from the pricing microservice. This should not be sent as part of the request
-    #since that opens the possibility of someone tampering with the req body and inserting their own price.
-    #For now, I will simulate this until the ms is ready.
-    price = await fetch_pricing(reservation_data["start_time"], reservation_data["end_time"])
+    #Fetch pricing from pricing microservice
+    price = fetch_pricing(reservation_data["start_time"], reservation_data["end_time"])
     
     #build a reservation object
     reservation = Reservation(
