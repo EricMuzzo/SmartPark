@@ -57,12 +57,20 @@ The **Smart Parking System** is designed as a distributed cloud-based platform w
         - Consuming messages published by the central server from the RabbitMQ server upon a reservation being made for that spot. Simulators only consume messages from the queue with the routing key matching their ID
         - Halting the random simulation process once it receives a reservation, and locally managing the reservation timing
 
+    **Deployed Host**: 130.107.131.86
+
 - ### RabbitMQ Message Broker <a name="rabbit"></a>
     In order to facilitate communication between the server and the IoT simulators, it became clear that individual HTTP requests between 1 server and *n* simulators would lead to an unecessary amount of load. To deal with this, the server does not declare a queue, but instead uses a *routing key*, which is unique to a simulator node, to publish a message.
 
     Simulators are responsible for declaring their queues, and consuming from queues that match their routing key.
 
     This way, the server does not care what happens after that message is published. So long as it used the right routing key, it can continue its operation.
+
+    **Deployment Host Admin Portal:** [http://4.248.248.109:15672/](http://4.248.248.109:15672/)
+    - Username: guest
+    - Password: guest 
+
+    **AMQP Port**: 5672
 
 - ### Pricing Microservice <a name="pricing"></a>
     To alleviate load from the API server, and also avoid making calls to itself, we separated the dynamic pricing calculation into its own application. This service uses a timestamp, coupled with an analysis of the demand of the garage (data fetched from API) to calculate a *per-minute* rate. The benefits of separating this function are:
@@ -72,11 +80,17 @@ The **Smart Parking System** is designed as a distributed cloud-based platform w
     - Prevention of pricing injection from the client
         - Final reservation priced is only determined by this application. Although the client side can use this service to get pricing information, the final reservation creation is done by making a call to this service before being persisted to the database.
 
+    **Deployment URL:** [https://smart-park-pricing-service-a8gwb6awatbehkh8.canadacentral-01.azurewebsites.net/](https://smart-park-pricing-service-a8gwb6awatbehkh8.canadacentral-01.azurewebsites.net/)
+
+    **API Interactive Docs**: [https://smart-park-pricing-service-a8gwb6awatbehkh8.canadacentral-01.azurewebsites.net/docs](https://smart-park-pricing-service-a8gwb6awatbehkh8.canadacentral-01.azurewebsites.net/docs)
+
 - ### Frontend Web UI <a name="ui"></a>
     Built once again in Python using the NiceGUI library, we created an interactive and user friendly way for drivers to interact with our application both on PC and mobile. This component features:
     - User signup and login
     - Overview of the garage availability
     - Reservation management
+
+    **Deployment URL:** [https://smartpark-ui-dkfqg0ghg9ezdge3.canadacentral-01.azurewebsites.net/](https://smartpark-ui-dkfqg0ghg9ezdge3.canadacentral-01.azurewebsites.net/)
 
 
 ## Authors <a name="authors"></a>
