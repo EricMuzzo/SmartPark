@@ -82,8 +82,12 @@ Obviously, you need docker installed on your system.
 7. Create a *Web App for Containers* resource on Azure using the image we just pushed. Google this for more info its pretty simple however.
     - deploy this and that's it.
 
+#### Our web app deployment URL: [https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net/](https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net/)
+
 
 ## Summary Of Routes and Endpoints <a name="endpoints"></a>
+
+Provided the API is still up and running on Azure, you can view the API documentation <a href="https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net/docs">here.</a>
 
 - #### Auth:
     - POST /signup - Creates a user using UserCreate model, returns UserSignUp.
