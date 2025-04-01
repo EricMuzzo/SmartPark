@@ -9,8 +9,7 @@ import json
 import threading
 
 
-# CENTRAL_API = "https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net/"
-CENTRAL_API = "http://localhost:8000/"
+CENTRAL_API = "https://central-api-gud7ethebpctcag5.canadacentral-01.azurewebsites.net/"
 RABBIT_SERVER, RABBIT_PORT = "4.248.248.109", 5672
 EXCHANGE_NAME = "res_exchange"
 
