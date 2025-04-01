@@ -1,5 +1,5 @@
-import dotenv
-dotenv.load_dotenv()
+# import dotenv
+# dotenv.load_dotenv()
 
 from fastapi import FastAPI
 from .utils.db import create_indexes, close_mongo_connection
